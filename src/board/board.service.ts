@@ -37,14 +37,17 @@ export class BoardService {
       return error;
     }
   }
-  async getBoardById(id: number) {
+  async getBoardById(id: string) {
     return await prisma.board.findUnique({
-      where: { id },
+      include: {
+        columns: true,
+      },
+      where: { id: +id },
     });
   }
-  async deleteBoardById(id: number) {
+  async deleteBoardById(id: string) {
     return await prisma.board.delete({
-      where: { id },
+      where: { id: +id },
     });
   }
 }

@@ -12,7 +12,7 @@ export class BoardController {
 
   @Get(':id')
   getBoardById(@Param('id') id: string) {
-    return this.boardService.getBoardById(+id);
+    return this.boardService.getBoardById(id);
   }
 
   @Post()
@@ -22,6 +22,6 @@ export class BoardController {
 
   @Delete(':id')
   deleteBoardById(@Param('id') id: string) {
-    return this.boardService.deleteBoardById(+id);
+    return this.boardService.deleteBoardById(id);
   }
 }

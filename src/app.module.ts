@@ -5,10 +5,11 @@ import { BoardController } from './board/board.controller';
 import { TaskController } from './task/task.controller';
 import { SubtaskController } from './subtask/subtask.controller';
 import { BoardService } from './board/board.service';
+import { TaskService } from './task/task.service';
 
 @Module({
   imports: [],
   controllers: [AppController, BoardController, TaskController, SubtaskController],
-  providers: [AppService, BoardService],
+  providers: [AppService, BoardService, TaskService],
 })
 export class AppModule {}
