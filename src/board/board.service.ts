@@ -42,10 +42,20 @@ export class BoardService {
     return await prisma.board.findUnique({
       include: {
         columns: {
+          orderBy: {
+            order: 'asc',
+          },
           include: {
             tasks: {
+              orderBy: {
+                order: 'asc',
+              },
               include: {
-                sub_tasks: true,
+                sub_tasks: {
+                  orderBy: {
+                    order: 'asc',
+                  },
+                },
               },
             },
           },
@@ -102,7 +112,7 @@ export class BoardService {
     };
 
     const upsertColumns = async () => {
-      return columns.forEach(async ({ name, id: columnId }: column) => {
+      return columns.forEach(async ({ name, id: columnId, order }: column) => {
         try {
           if (columnId)
             return await prisma.column.update({
@@ -111,6 +121,7 @@ export class BoardService {
               },
               data: {
                 name,
+                order,
               },
             });
 
@@ -118,6 +129,7 @@ export class BoardService {
             return await prisma.column.create({
               data: {
                 name,
+                order,
                 board: {
                   connect: {
                     id: +id,
@@ -140,7 +152,8 @@ export class BoardService {
         });
         //anticipate delay for prisma to update
         await new Promise((resolve) => setTimeout(resolve, 500));
-        return { message: 'Board updated successfully' };
+        const updatedBoard = await this.getBoardById(id);
+        return { message: 'Board updated successfully', data: updatedBoard };
       } catch (err) {
         console.log(err);
       }

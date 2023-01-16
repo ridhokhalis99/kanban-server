@@ -122,29 +122,33 @@ export class TaskService {
 
     const upsertSubtasks = async () => {
       try {
-        return subtasks.forEach(async ({ name, id: subTaskId }: sub_task) => {
-          if (subTaskId)
-            return await prisma.sub_task.update({
-              where: {
-                id: +subTaskId,
-              },
-              data: {
-                name,
-              },
-            });
+        return subtasks.forEach(
+          async ({ name, id: subTaskId, order }: sub_task) => {
+            if (subTaskId)
+              return await prisma.sub_task.update({
+                where: {
+                  id: +subTaskId,
+                },
+                data: {
+                  name,
+                  order,
+                },
+              });
 
-          if (id)
-            return await prisma.sub_task.create({
-              data: {
-                name,
-                task: {
-                  connect: {
-                    id: +id,
+            if (id)
+              return await prisma.sub_task.create({
+                data: {
+                  name,
+                  order,
+                  task: {
+                    connect: {
+                      id: +id,
+                    },
                   },
                 },
-              },
-            });
-        });
+              });
+          },
+        );
       } catch (err) {
         throw err;
       }

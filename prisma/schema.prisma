@@ -20,6 +20,7 @@ model sub_task {
   created_at  DateTime? @default(now()) @db.Timestamptz(6)
   task_id     Int?
   is_finished Boolean   @default(false)
+  order       Int       @default(0)
   task        task?     @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -30,6 +31,7 @@ model task {
   created_at  DateTime?  @default(now()) @db.Timestamptz(6)
   column_id   Int?
   sub_tasks    sub_task[]
+  order       Int       @default(0)
   column      column?    @relation(fields: [column_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -39,5 +41,6 @@ model column {
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   board_id   Int?
   board      board?    @relation(fields: [board_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  order       Int       @default(0)
   tasks       task[]
 }
