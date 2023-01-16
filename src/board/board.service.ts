@@ -29,10 +29,10 @@ export class BoardService {
     }
 
     try {
-      await prisma.board.create({
+      const createdBoard = await prisma.board.create({
         data: board,
       });
-      return { message: 'Board created successfully' };
+      return { message: 'Board created successfully', data: createdBoard };
     } catch (error) {
       console.log(error);
       return error;
@@ -138,6 +138,8 @@ export class BoardService {
           await deleteColumns();
           await upsertColumns();
         });
+        //anticipate delay for prisma to update
+        await new Promise((resolve) => setTimeout(resolve, 500));
         return { message: 'Board updated successfully' };
       } catch (err) {
         console.log(err);

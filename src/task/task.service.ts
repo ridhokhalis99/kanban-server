@@ -157,7 +157,17 @@ export class TaskService {
           await deleteSubtasks();
           await upsertSubtasks();
         });
-        return { message: 'Task updated successfully' };
+        //anticipate delay for prisma to update
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const taskDetail = await prisma.task.findUnique({
+          where: {
+            id: +id,
+          },
+          include: {
+            sub_tasks: true,
+          },
+        });
+        return { message: 'Task updated successfully', data: taskDetail };
       } catch (err) {
         console.log(err);
       }
