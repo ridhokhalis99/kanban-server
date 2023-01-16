@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { CreateTaskDto } from './dto/create-task-dto';
 import { UpdateTaskColumnDto } from './dto/update-task-column-dto';
+import { UpdateTaskPayloadDto } from './dto/update-task-payload-dto';
+import { sub_task } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -64,6 +66,101 @@ export class TaskService {
     } catch (error) {
       console.log(error);
       return error;
+    }
+  }
+  async deleteTaskById(id: string) {
+    try {
+      await prisma.task.delete({
+        where: {
+          id: +id,
+        },
+      });
+      return { message: 'Task deleted successfully' };
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
+  }
+  async updateTaskById(id: string, updateTaskPayloadDto: UpdateTaskPayloadDto) {
+    const { title, description, subtasks, columnId } = updateTaskPayloadDto;
+
+    const updateTask = async () => {
+      try {
+        if (id)
+          return await prisma.task.update({
+            data: {
+              name: title,
+              description: description,
+              column_id: +columnId,
+            },
+            where: {
+              id: +id,
+            },
+          });
+      } catch (err) {
+        throw err;
+      }
+    };
+
+    const deleteSubtasks = async () => {
+      try {
+        const subtasksIds = subtasks.map(({ id }: sub_task) => id);
+        const filteredSubtasksIds = subtasksIds.filter((id: number) => id);
+        if (id)
+          return await prisma.sub_task.deleteMany({
+            where: {
+              id: {
+                notIn: filteredSubtasksIds,
+              },
+              task_id: +id,
+            },
+          });
+      } catch (err) {
+        throw err;
+      }
+    };
+
+    const upsertSubtasks = async () => {
+      try {
+        return subtasks.forEach(async ({ name, id: subTaskId }: sub_task) => {
+          if (subTaskId)
+            return await prisma.sub_task.update({
+              where: {
+                id: +subTaskId,
+              },
+              data: {
+                name,
+              },
+            });
+
+          if (id)
+            return await prisma.sub_task.create({
+              data: {
+                name,
+                task: {
+                  connect: {
+                    id: +id,
+                  },
+                },
+              },
+            });
+        });
+      } catch (err) {
+        throw err;
+      }
+    };
+
+    if (id) {
+      try {
+        await prisma.$transaction(async () => {
+          await updateTask();
+          await deleteSubtasks();
+          await upsertSubtasks();
+        });
+        return { message: 'Task updated successfully' };
+      } catch (err) {
+        console.log(err);
+      }
     }
   }
 }
