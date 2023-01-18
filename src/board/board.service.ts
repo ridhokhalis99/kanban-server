@@ -7,11 +7,11 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class BoardService {
-  async getBoards() {
-    return await prisma.board.findMany();
+  async getBoards(user_id: number) {
+    return await prisma.board.findMany({ where: { user_id: user_id } });
   }
   async createBoard(createBoardDto: CreateBoardDto) {
-    const { board: boardTitle, columns } = createBoardDto;
+    const { board: boardTitle, columns, user_id } = createBoardDto;
     const isIncludeColumns = !!columns?.length;
     let board: Prisma.boardCreateInput;
 
@@ -23,9 +23,21 @@ export class BoardService {
             data: columns,
           },
         },
+        user: {
+          connect: {
+            id: user_id,
+          },
+        },
       };
     } else {
-      board = { name: boardTitle };
+      board = {
+        name: boardTitle,
+        user: {
+          connect: {
+            id: user_id,
+          },
+        },
+      };
     }
 
     try {
@@ -38,46 +50,62 @@ export class BoardService {
       return error;
     }
   }
-  async getBoardById(id: string) {
-    return await prisma.board.findUnique({
-      include: {
-        columns: {
-          orderBy: {
-            order: 'asc',
-          },
-          include: {
-            tasks: {
-              orderBy: {
-                order: 'asc',
-              },
-              include: {
-                sub_tasks: {
-                  orderBy: {
-                    order: 'asc',
+  async getBoardById(id: number, user_id: number) {
+    try {
+      return await prisma.board.findFirstOrThrow({
+        where: {
+          id: id,
+          user_id: user_id,
+        },
+        include: {
+          columns: {
+            orderBy: {
+              order: 'asc',
+            },
+            include: {
+              tasks: {
+                orderBy: {
+                  order: 'asc',
+                },
+                include: {
+                  sub_tasks: {
+                    orderBy: {
+                      order: 'asc',
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-      where: { id: +id },
-    });
+      });
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
   }
-  async deleteBoardById(id: string) {
-    return await prisma.board.delete({
-      where: { id: +id },
-    });
+  async deleteBoardById(id: number) {
+    try {
+      await prisma.board.delete({
+        where: { id: +id },
+      });
+      return { message: 'Board deleted successfully' };
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
   }
   async updateBoardById(
     id: string,
     updateBoardPayloadDto: UpdateBoardPayloadDto,
   ) {
-    const { board, columns } = updateBoardPayloadDto;
+    const { columns, user_id } = updateBoardPayloadDto;
 
     const updateBoard = async () => {
       try {
-        if (id)
+        if (id) {
+          const board = await this.getBoardById(+id, user_id);
+          if (!board) throw new Error('Board not found');
           return await prisma.board.update({
             data: {
               name: board,
@@ -86,8 +114,9 @@ export class BoardService {
               id: +id,
             },
           });
-      } catch (err) {
-        throw err;
+        }
+      } catch (error) {
+        throw error;
       }
     };
 
@@ -97,6 +126,13 @@ export class BoardService {
         const filteredColumnsIds = columnsIds.filter(
           (columnId: number) => columnId,
         );
+        const boards = await prisma.board.findMany({
+          where: {
+            id: +id,
+            user_id: user_id,
+          },
+        });
+        if (!boards.length) throw new Error('Board not found');
         if (id)
           return await prisma.column.deleteMany({
             where: {
@@ -106,8 +142,8 @@ export class BoardService {
               board_id: +id,
             },
           });
-      } catch (err) {
-        throw err;
+      } catch (error) {
+        throw error;
       }
     };
 
@@ -137,8 +173,8 @@ export class BoardService {
                 },
               },
             });
-        } catch (err) {
-          throw err;
+        } catch (error) {
+          throw error;
         }
       });
     };
@@ -152,10 +188,10 @@ export class BoardService {
         });
         //anticipate delay for prisma to update
         await new Promise((resolve) => setTimeout(resolve, 500));
-        const updatedBoard = await this.getBoardById(id);
+        const updatedBoard = await this.getBoardById(+id, user_id);
         return { message: 'Board updated successfully', data: updatedBoard };
-      } catch (err) {
-        console.log(err);
+      } catch (error) {
+        console.log(error);
       }
     }
   }

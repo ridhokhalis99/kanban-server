@@ -15,23 +15,26 @@ import { UpdateBoardPayloadDto } from './dto/update-board-payload-dto';
 export class BoardController {
   constructor(private readonly boardService: BoardService) {}
   @Get()
-  getBoards() {
-    return this.boardService.getBoards();
+  getBoards(@Body() { user_id }: { user_id: number }) {
+    return this.boardService.getBoards(user_id);
   }
 
   @Get(':id')
-  getBoardById(@Param('id') id: string) {
-    return this.boardService.getBoardById(id);
+  getBoardById(
+    @Param('id') id: string,
+    @Body() { user_id }: { user_id: number },
+  ) {
+    return this.boardService.getBoardById(+id, user_id);
+  }
+
+  @Delete(':id')
+  deleteBoardById(@Param('id') id: string) {
+    return this.boardService.deleteBoardById(+id);
   }
 
   @Post()
   createBoard(@Body() createBoardDto: CreateBoardDto) {
     return this.boardService.createBoard(createBoardDto);
-  }
-
-  @Delete(':id')
-  deleteBoardById(@Param('id') id: string) {
-    return this.boardService.deleteBoardById(id);
   }
 
   @Put(':id')

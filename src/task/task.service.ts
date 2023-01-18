@@ -68,7 +68,7 @@ export class TaskService {
       return error;
     }
   }
-  async deleteTaskById(id: string) {
+  async deleteTaskById(id: number, user_id: number) {
     try {
       await prisma.task.delete({
         where: {
@@ -97,8 +97,8 @@ export class TaskService {
               id: +id,
             },
           });
-      } catch (err) {
-        throw err;
+      } catch (error) {
+        throw error;
       }
     };
 
@@ -115,8 +115,8 @@ export class TaskService {
               task_id: +id,
             },
           });
-      } catch (err) {
-        throw err;
+      } catch (error) {
+        throw error;
       }
     };
 
@@ -149,8 +149,8 @@ export class TaskService {
               });
           },
         );
-      } catch (err) {
-        throw err;
+      } catch (error) {
+        throw error;
       }
     };
 
@@ -172,8 +172,9 @@ export class TaskService {
           },
         });
         return { message: 'Task updated successfully', data: taskDetail };
-      } catch (err) {
-        console.log(err);
+      } catch (error) {
+        console.log(error);
+        return error;
       }
     }
   }

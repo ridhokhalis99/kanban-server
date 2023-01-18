@@ -18,8 +18,8 @@ export class ColumnService {
         });
       });
       return { message: 'Column updated successfully' };
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.log(error);
     }
   }
 }

@@ -18,8 +18,8 @@ export class SubtaskService {
         },
       });
       return { message: 'Subtask updated successfully' };
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.log(error);
     }
   }
 }
