@@ -5,4 +5,5 @@ export class CreateTaskDto {
   description: string;
   subtasks: sub_task[];
   columnId: number;
+  user_id: number;
 }

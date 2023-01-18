@@ -5,4 +5,5 @@ export class UpdateTaskPayloadDto {
   subtasks: sub_task[];
   title: string;
   columnId: string;
+  user_id: number;
 }

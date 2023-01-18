@@ -1,24 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { UpdateColumnDto } from './dto/update-column-dto';
 import { ColumnDetail } from './interfaces/column-detail';
+import { task } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class ColumnService {
-  async updateColumn(columns: ColumnDetail[]) {
+  async updateColumn(updateColumnDto: UpdateColumnDto) {
+    const { columns, user_id } = updateColumnDto;
     try {
       columns.forEach(({ tasks, id: column_id }: ColumnDetail) => {
-        tasks.forEach(async (task: any) => {
-          const { order } = task;
+        tasks.forEach(async (task: task) => {
+          const { id, order } = task;
+          await prisma.task.findFirstOrThrow({
+            where: { id, user_id },
+          });
           await prisma.task.update({
-            where: { id: task.id },
+            where: { id: id },
             data: { column_id, order },
           });
         });
       });
       return { message: 'Column updated successfully' };
     } catch (error) {
+      if (error.code === 'P2025') {
+        return { message: 'Task not found' };
+      }
       console.log(error);
     }
   }

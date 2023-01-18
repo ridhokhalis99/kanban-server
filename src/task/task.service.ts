@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 @Injectable()
 export class TaskService {
   async createTask(createTaskDto: CreateTaskDto) {
-    const { title, description, subtasks, columnId } = createTaskDto;
+    const { title, description, subtasks, columnId, user_id } = createTaskDto;
     const isIncludeSubtasks = !!subtasks?.length;
     let task: Prisma.taskCreateInput;
 
@@ -28,12 +28,22 @@ export class TaskService {
             id: +columnId,
           },
         },
+        user: {
+          connect: {
+            id: +user_id,
+          },
+        },
       };
     } else {
       task = {
         name: title,
         description,
         column: { connect: { id: +columnId } },
+        user: {
+          connect: {
+            id: +user_id,
+          },
+        },
       };
     }
 
@@ -44,12 +54,17 @@ export class TaskService {
       return { message: 'Task created successfully' };
     } catch (error) {
       console.log(error);
-      return error;
     }
   }
   async updateTaskColumn(updateTaskColumnDto: UpdateTaskColumnDto) {
-    const { taskId, columnId } = updateTaskColumnDto;
+    const { taskId, columnId, user_id } = updateTaskColumnDto;
     try {
+      await prisma.task.findFirstOrThrow({
+        where: {
+          id: +taskId,
+          user_id: user_id,
+        },
+      });
       await prisma.task.update({
         where: {
           id: +taskId,
@@ -64,12 +79,20 @@ export class TaskService {
       });
       return { message: 'Task updated successfully' };
     } catch (error) {
+      if (error.code === 'P2025') {
+        return { message: 'Task not found' };
+      }
       console.log(error);
-      return error;
     }
   }
   async deleteTaskById(id: number, user_id: number) {
     try {
+      await prisma.task.findFirstOrThrow({
+        where: {
+          id: +id,
+          user_id: user_id,
+        },
+      });
       await prisma.task.delete({
         where: {
           id: +id,
@@ -77,26 +100,35 @@ export class TaskService {
       });
       return { message: 'Task deleted successfully' };
     } catch (error) {
+      if (error.code === 'P2025') {
+        return { message: 'Task not found' };
+      }
       console.log(error);
-      return error;
     }
   }
   async updateTaskById(id: string, updateTaskPayloadDto: UpdateTaskPayloadDto) {
-    const { title, description, subtasks, columnId } = updateTaskPayloadDto;
+    const { title, description, subtasks, columnId, user_id } =
+      updateTaskPayloadDto;
 
     const updateTask = async () => {
       try {
         if (id)
-          return await prisma.task.update({
-            data: {
-              name: title,
-              description: description,
-              column_id: +columnId,
-            },
+          await prisma.task.findFirstOrThrow({
             where: {
               id: +id,
+              user_id: user_id,
             },
           });
+        return await prisma.task.update({
+          data: {
+            name: title,
+            description: description,
+            column_id: +columnId,
+          },
+          where: {
+            id: +id,
+          },
+        });
       } catch (error) {
         throw error;
       }
@@ -113,6 +145,7 @@ export class TaskService {
                 notIn: filteredSubtasksIds,
               },
               task_id: +id,
+              user_id: user_id,
             },
           });
       } catch (error) {
@@ -124,7 +157,13 @@ export class TaskService {
       try {
         return subtasks.forEach(
           async ({ name, id: subTaskId, order }: sub_task) => {
-            if (subTaskId)
+            if (subTaskId) {
+              await prisma.sub_task.findFirstOrThrow({
+                where: {
+                  id: +subTaskId,
+                  user_id: user_id,
+                },
+              });
               return await prisma.sub_task.update({
                 where: {
                   id: +subTaskId,
@@ -134,6 +173,7 @@ export class TaskService {
                   order,
                 },
               });
+            }
 
             if (id)
               return await prisma.sub_task.create({
@@ -143,6 +183,11 @@ export class TaskService {
                   task: {
                     connect: {
                       id: +id,
+                    },
+                  },
+                  user: {
+                    connect: {
+                      id: user_id,
                     },
                   },
                 },
@@ -173,8 +218,10 @@ export class TaskService {
         });
         return { message: 'Task updated successfully', data: taskDetail };
       } catch (error) {
+        if (error.code === 'P2025') {
+          return { message: 'Task not found' };
+        }
         console.log(error);
-        return error;
       }
     }
   }

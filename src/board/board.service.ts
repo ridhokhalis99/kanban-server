@@ -155,7 +155,13 @@ export class BoardService {
     const upsertColumns = async () => {
       return columns.forEach(async ({ name, id: columnId, order }: column) => {
         try {
-          if (columnId)
+          if (columnId) {
+            await prisma.column.findFirstOrThrow({
+              where: {
+                id: +columnId,
+                user_id: user_id,
+              },
+            });
             return await prisma.column.update({
               where: {
                 id: +columnId,
@@ -165,6 +171,7 @@ export class BoardService {
                 order,
               },
             });
+          }
 
           if (id)
             return await prisma.column.create({
@@ -174,6 +181,11 @@ export class BoardService {
                 board: {
                   connect: {
                     id: +id,
+                  },
+                },
+                user: {
+                  connect: {
+                    id: user_id,
                   },
                 },
               },
