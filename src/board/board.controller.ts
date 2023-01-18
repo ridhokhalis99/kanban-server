@@ -28,8 +28,11 @@ export class BoardController {
   }
 
   @Delete(':id')
-  deleteBoardById(@Param('id') id: string) {
-    return this.boardService.deleteBoardById(+id);
+  deleteBoardById(
+    @Param('id') id: string,
+    @Body() { user_id }: { user_id: number },
+  ) {
+    return this.boardService.deleteBoardById(+id, user_id);
   }
 
   @Post()

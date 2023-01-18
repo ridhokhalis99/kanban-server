@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 @Injectable()
 export class UserService {
   async login(loginDto: LoginDto) {
-    const { email, password } = loginDto;
+    const { email = '', password } = loginDto;
     try {
       const user = await prisma.user.findUnique({
         where: {
@@ -32,7 +32,7 @@ export class UserService {
         error.message === 'User not found' ||
         error.message === 'Invalid password'
       ) {
-        throw new Error(error.message);
+        return { error: error.message };
       }
       console.log(error);
     }
@@ -51,7 +51,7 @@ export class UserService {
       return { message: 'User created successfully' };
     } catch (error) {
       if (error.code === 'P2002') {
-        throw new Error('User already exists');
+        return { error: 'Email already exists' };
       }
       console.log(error);
     }

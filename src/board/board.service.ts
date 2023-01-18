@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaClient, column } from '@prisma/client';
+import { response } from 'express';
 import { CreateBoardDto } from './dto/create-board-dto';
 import { UpdateBoardPayloadDto } from './dto/update-board-payload-dto';
 
@@ -47,7 +48,6 @@ export class BoardService {
       return { message: 'Board created successfully', data: createdBoard };
     } catch (error) {
       console.log(error);
-      return error;
     }
   }
   async getBoardById(id: number, user_id: number) {
@@ -80,35 +80,46 @@ export class BoardService {
         },
       });
     } catch (error) {
+      if (error.code === 'P2025') {
+        return { message: 'Board not found' };
+      }
       console.log(error);
-      return error;
     }
   }
-  async deleteBoardById(id: number) {
+  async deleteBoardById(id: number, user_id: number) {
     try {
+      const board = await prisma.board.findFirstOrThrow({
+        where: { id: id, user_id: user_id },
+      });
       await prisma.board.delete({
         where: { id: +id },
       });
       return { message: 'Board deleted successfully' };
     } catch (error) {
+      if (error.code === 'P2025') {
+        return { message: 'Board not found' };
+      }
       console.log(error);
-      return error;
     }
   }
   async updateBoardById(
     id: string,
     updateBoardPayloadDto: UpdateBoardPayloadDto,
   ) {
-    const { columns, user_id } = updateBoardPayloadDto;
+    const { columns, user_id, board: boardName } = updateBoardPayloadDto;
 
     const updateBoard = async () => {
       try {
         if (id) {
-          const board = await this.getBoardById(+id, user_id);
-          if (!board) throw new Error('Board not found');
+          await prisma.board.findFirstOrThrow({
+            where: {
+              id: +id,
+              user_id: user_id,
+            },
+          });
           return await prisma.board.update({
             data: {
-              name: board,
+              name: boardName,
             },
             where: {
               id: +id,
@@ -191,6 +202,9 @@ export class BoardService {
         const updatedBoard = await this.getBoardById(+id, user_id);
         return { message: 'Board updated successfully', data: updatedBoard };
       } catch (error) {
+        if (error.code === 'P2025') {
+          return { message: 'Board not found' };
+        }
         console.log(error);
       }
     }
