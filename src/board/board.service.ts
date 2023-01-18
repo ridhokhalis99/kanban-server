@@ -88,7 +88,7 @@ export class BoardService {
   }
   async deleteBoardById(id: number, user_id: number) {
     try {
-      const board = await prisma.board.findFirstOrThrow({
+      await prisma.board.findFirstOrThrow({
         where: { id: id, user_id: user_id },
       });
       await prisma.board.delete({
@@ -137,13 +137,6 @@ export class BoardService {
         const filteredColumnsIds = columnsIds.filter(
           (columnId: number) => columnId,
         );
-        const boards = await prisma.board.findMany({
-          where: {
-            id: +id,
-            user_id: user_id,
-          },
-        });
-        if (!boards.length) throw new Error('Board not found');
         if (id)
           return await prisma.column.deleteMany({
             where: {
@@ -151,6 +144,7 @@ export class BoardService {
                 notIn: filteredColumnsIds,
               },
               board_id: +id,
+              user_id: user_id,
             },
           });
       } catch (error) {
