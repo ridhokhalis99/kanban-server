@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaClient, column } from '@prisma/client';
 import { CreateBoardDto } from './dto/create-board-dto';
 import { UpdateBoardPayloadDto } from './dto/update-board-payload-dto';
+import { HttpException } from '@nestjs/common';
 
 const prisma = new PrismaClient();
 
@@ -49,6 +50,7 @@ export class BoardService {
       return { message: 'Board created successfully', data: createdBoard };
     } catch (error) {
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async getBoardById(id: number, user_id: number) {
@@ -82,9 +84,10 @@ export class BoardService {
       });
     } catch (error) {
       if (error.code === 'P2025') {
-        return { message: 'Board not found' };
+        throw new HttpException('Board not found', 404);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async deleteBoardById(id: number, user_id: number) {
@@ -98,9 +101,10 @@ export class BoardService {
       return { message: 'Board deleted successfully' };
     } catch (error) {
       if (error.code === 'P2025') {
-        return { message: 'Board not found' };
+        throw new HttpException('Board not found', 404);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async updateBoardById(
@@ -138,7 +142,6 @@ export class BoardService {
         const filteredColumnsIds = columnsIds.filter(
           (columnId: number) => columnId,
         );
-        console.log(id, user_id);
         if (id)
           return await prisma.column.deleteMany({
             where: {
@@ -211,9 +214,10 @@ export class BoardService {
         return { message: 'Board updated successfully', data: updatedBoard };
       } catch (error) {
         if (error.code === 'P2025') {
-          return { message: 'Board not found' };
+          throw new HttpException('Board not found', 404);
         }
         console.log(error);
+        throw new HttpException('Internal server error', 500);
       }
     }
   }

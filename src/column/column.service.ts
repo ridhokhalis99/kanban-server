@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { UpdateColumnDto } from './dto/update-column-dto';
 import { ColumnDetail } from './interfaces/column-detail';
 import { task } from '@prisma/client';
+import { HttpException } from '@nestjs/common';
 
 const prisma = new PrismaClient();
 
@@ -26,7 +27,7 @@ export class ColumnService {
       return { message: 'Column updated successfully' };
     } catch (error) {
       if (error.code === 'P2025') {
-        return { message: 'Task not found' };
+        throw new HttpException('Task not found', 404);
       }
       console.log(error);
     }

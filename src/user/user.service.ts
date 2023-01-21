@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { LoginDto } from './dto/login-dto';
 import { RegisterDto } from './dto/register-dto';
 import { PrismaClient } from '@prisma/client';
@@ -30,13 +30,14 @@ export class UserService {
       const accessToken = sign({ id: user.id }, process.env.SECRET_KEY);
       return { ...user, accessToken };
     } catch (error) {
-      if (
-        error.message === 'User not found' ||
-        error.message === 'Invalid password'
-      ) {
-        return { error: error.message };
+      if (error.message === 'User not found') {
+        throw new HttpException('User not found', 404);
+      }
+      if (error.message === 'Invalid password') {
+        throw new HttpException('Unauthorized', 401);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async socialLogin(socialLoginDto: SocialLoginDto) {
@@ -55,9 +56,10 @@ export class UserService {
       return { ...user, accessToken };
     } catch (error) {
       if (error.message === 'User not found') {
-        return { error: error.message };
+        throw new HttpException('User not found', 404);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async register(registerDto: RegisterDto) {
@@ -74,9 +76,10 @@ export class UserService {
       return { message: 'User created successfully' };
     } catch (error) {
       if (error.code === 'P2002') {
-        return { error: 'Email already exists' };
+        throw new HttpException('Email already exists', 400);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async socialRegister(socialRegisterDto: SocialRegisterDto) {
@@ -92,9 +95,10 @@ export class UserService {
       return { message: 'User created successfully' };
     } catch (error) {
       if (error.code === 'P2002') {
-        return { error: 'Email already exists' };
+        throw new HttpException('Email already exists', 400);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
 }

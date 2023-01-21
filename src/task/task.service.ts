@@ -4,6 +4,7 @@ import { CreateTaskDto } from './dto/create-task-dto';
 import { UpdateTaskColumnDto } from './dto/update-task-column-dto';
 import { UpdateTaskPayloadDto } from './dto/update-task-payload-dto';
 import { sub_task } from '@prisma/client';
+import { HttpException } from '@nestjs/common';
 
 const prisma = new PrismaClient();
 
@@ -50,6 +51,7 @@ export class TaskService {
       return { message: 'Task created successfully' };
     } catch (error) {
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async updateTaskColumn(updateTaskColumnDto: UpdateTaskColumnDto) {
@@ -76,9 +78,10 @@ export class TaskService {
       return { message: 'Task updated successfully' };
     } catch (error) {
       if (error.code === 'P2025') {
-        return { message: 'Task not found' };
+        throw new HttpException('Task not found', 404);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async deleteTaskById(id: number, user_id: number) {
@@ -97,9 +100,10 @@ export class TaskService {
       return { message: 'Task deleted successfully' };
     } catch (error) {
       if (error.code === 'P2025') {
-        return { message: 'Task not found' };
+        throw new HttpException('Task not found', 404);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
   async updateTaskById(id: string, updateTaskPayloadDto: UpdateTaskPayloadDto) {
@@ -215,9 +219,10 @@ export class TaskService {
         return { message: 'Task updated successfully', data: taskDetail };
       } catch (error) {
         if (error.code === 'P2025') {
-          return { message: 'Task not found' };
+          throw new HttpException('Task not found', 404);
         }
         console.log(error);
+        throw new HttpException('Internal server error', 500);
       }
     }
   }

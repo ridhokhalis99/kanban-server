@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { UpdateIsFinishedDto } from './dto/update-is-finished-dto';
+import { HttpException } from '@nestjs/common';
 
 const prisma = new PrismaClient();
 
@@ -26,9 +27,10 @@ export class SubtaskService {
       return { message: 'Subtask updated successfully' };
     } catch (error) {
       if (error.code === 'P2025') {
-        return { message: 'Subtask not found' };
+        throw new HttpException('Subtask not found', 404);
       }
       console.log(error);
+      throw new HttpException('Internal server error', 500);
     }
   }
 }
