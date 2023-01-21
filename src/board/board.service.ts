@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaClient, column } from '@prisma/client';
-import { response } from 'express';
 import { CreateBoardDto } from './dto/create-board-dto';
 import { UpdateBoardPayloadDto } from './dto/update-board-payload-dto';
 

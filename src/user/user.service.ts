@@ -4,7 +4,8 @@ import { RegisterDto } from './dto/register-dto';
 import { PrismaClient } from '@prisma/client';
 import { hashSync, compareSync } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
-import { env } from 'process';
+import { SocialRegisterDto } from './dto/social-register-dto';
+import { SocialLoginDto } from './dto/social-login';
 
 const prisma = new PrismaClient();
 
@@ -25,13 +26,35 @@ export class UserService {
       if (!isPasswordValid) {
         throw new Error('Invalid password');
       }
-      const token = sign({ id: user.id }, env.SECRET_KEY);
-      return { token };
+      delete user.password;
+      const accessToken = sign({ id: user.id }, process.env.SECRET_KEY);
+      return { ...user, accessToken };
     } catch (error) {
       if (
         error.message === 'User not found' ||
         error.message === 'Invalid password'
       ) {
+        return { error: error.message };
+      }
+      console.log(error);
+    }
+  }
+  async socialLogin(socialLoginDto: SocialLoginDto) {
+    const { email = '' } = socialLoginDto;
+    try {
+      const user = await prisma.user.findUnique({
+        where: {
+          email: email.toLowerCase(),
+        },
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+      delete user.password;
+      const accessToken = sign({ id: user.id }, process.env.SECRET_KEY);
+      return { ...user, accessToken };
+    } catch (error) {
+      if (error.message === 'User not found') {
         return { error: error.message };
       }
       console.log(error);
@@ -46,6 +69,24 @@ export class UserService {
           name,
           email: email.toLowerCase(),
           password: hashedPassword,
+        },
+      });
+      return { message: 'User created successfully' };
+    } catch (error) {
+      if (error.code === 'P2002') {
+        return { error: 'Email already exists' };
+      }
+      console.log(error);
+    }
+  }
+  async socialRegister(socialRegisterDto: SocialRegisterDto) {
+    const { name, email } = socialRegisterDto;
+    try {
+      await prisma.user.create({
+        data: {
+          name,
+          email: email.toLowerCase(),
+          password: 'social-login',
         },
       });
       return { message: 'User created successfully' };

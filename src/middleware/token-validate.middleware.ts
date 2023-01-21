@@ -5,7 +5,7 @@ import { NextFunction, Request, Response } from 'express';
 
 export class TokenValidateMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    const token = req.headers.authtoken as string;
+    const token = req.headers.accessToken as string;
     verify(token, env.SECRET_KEY, (error, decoded: { id: number }) => {
       if (error) {
         res.status(401).json({
