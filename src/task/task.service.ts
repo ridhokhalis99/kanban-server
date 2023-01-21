@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { CreateTaskDto } from './dto/create-task-dto';
 import { UpdateTaskColumnDto } from './dto/update-task-column-dto';
 import { UpdateTaskPayloadDto } from './dto/update-task-payload-dto';
@@ -12,45 +12,41 @@ export class TaskService {
   async createTask(createTaskDto: CreateTaskDto) {
     const { title, description, subtasks, columnId, user_id } = createTaskDto;
     const isIncludeSubtasks = !!subtasks?.length;
-    let task: Prisma.taskCreateInput;
-
-    if (isIncludeSubtasks) {
-      task = {
-        name: title,
-        description,
-        sub_tasks: {
-          createMany: {
-            data: subtasks,
-          },
-        },
-        column: {
-          connect: {
-            id: +columnId,
-          },
-        },
-        user: {
-          connect: {
-            id: +user_id,
-          },
-        },
-      };
-    } else {
-      task = {
-        name: title,
-        description,
-        column: { connect: { id: +columnId } },
-        user: {
-          connect: {
-            id: +user_id,
-          },
-        },
-      };
-    }
 
     try {
-      await prisma.task.create({
-        data: task,
+      const createdTask = await prisma.task.create({
+        data: {
+          name: title,
+          description,
+          column: { connect: { id: +columnId } },
+          user: {
+            connect: {
+              id: +user_id,
+            },
+          },
+        },
       });
+      if (isIncludeSubtasks) {
+        subtasks.forEach(async (subtask) => {
+          const { name, order } = subtask;
+          await prisma.sub_task.create({
+            data: {
+              name: name,
+              order: order,
+              task: {
+                connect: {
+                  id: createdTask.id,
+                },
+              },
+              user: {
+                connect: {
+                  id: user_id,
+                },
+              },
+            },
+          });
+        });
+      }
       return { message: 'Task created successfully' };
     } catch (error) {
       console.log(error);

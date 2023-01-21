@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, PrismaClient, column } from '@prisma/client';
+import { PrismaClient, column } from '@prisma/client';
 import { CreateBoardDto } from './dto/create-board-dto';
 import { UpdateBoardPayloadDto } from './dto/update-board-payload-dto';
 
@@ -13,37 +13,39 @@ export class BoardService {
   async createBoard(createBoardDto: CreateBoardDto) {
     const { board: boardTitle, columns, user_id } = createBoardDto;
     const isIncludeColumns = !!columns?.length;
-    let board: Prisma.boardCreateInput;
-
-    if (isIncludeColumns) {
-      board = {
-        name: boardTitle,
-        columns: {
-          createMany: {
-            data: columns,
-          },
-        },
-        user: {
-          connect: {
-            id: user_id,
-          },
-        },
-      };
-    } else {
-      board = {
-        name: boardTitle,
-        user: {
-          connect: {
-            id: user_id,
-          },
-        },
-      };
-    }
-
     try {
       const createdBoard = await prisma.board.create({
-        data: board,
+        data: {
+          name: boardTitle,
+          user: {
+            connect: {
+              id: user_id,
+            },
+          },
+        },
       });
+      if (isIncludeColumns) {
+        columns.forEach(async (column) => {
+          const { name, order } = column;
+          await prisma.column.create({
+            data: {
+              name: name,
+              order: order,
+              board: {
+                connect: {
+                  id: createdBoard.id,
+                },
+              },
+              user: {
+                connect: {
+                  id: user_id,
+                },
+              },
+            },
+          });
+        });
+      }
+
       return { message: 'Board created successfully', data: createdBoard };
     } catch (error) {
       console.log(error);
@@ -136,6 +138,7 @@ export class BoardService {
         const filteredColumnsIds = columnsIds.filter(
           (columnId: number) => columnId,
         );
+        console.log(id, user_id);
         if (id)
           return await prisma.column.deleteMany({
             where: {
